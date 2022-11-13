@@ -1,0 +1,195 @@
+<Huawei> 用户视图，查看简单运行状态和统计信息
+[Huawei]    系统视图，配置全局性的系统参数
+[Huawei-GigabitEthernet0/0/1]   接口视图，配置域该接口相关参数和功能
+
+
+
+【语法错误信息】   （Unrecognized 未被认可的） （Ambiguous  模棱两可的） （Incomplete 不完整的）
+Error: Unrecognized  command    found at ‘^’ position.     没有查找到命令/关键字
+Error: Ambiguous     command     found at ‘^’ position.     输入命令不明确
+Error: Incomplete      command     found at ‘^’ position.     输入命令不完整
+Error: Wrong parameter                found at ‘^’ position.      参数类型错/参数值越界
+Error: Too many parameters          found at ‘^’ position.      输入参数太多
+
+
+
+<Router> system-view
+[Router] interface GigabitEthernet 0/0/0                        #进入千兆口 GE0/0/0 
+[Router-GigabitEthernet0/0/0] ip address 10.1.12.1 24    #为接口配置IP地址
+[Router-GigabitEthernet0/0/0] undo shutdown              #将端口取消关闭（默认即取消关闭）
+
+
+【保存配置】
+<SW1> save
+在设备上的每一个配置性操作，都会记录在设备的当前配置文件：“current-configuration”之
+中，这个配置文件是保存在动态内存中的，设备掉电或重启之后current-configuration将会丢
+失。因此为了保证设备重启后不丢失当前已经完成的配置，则要在配置变更后将currentconfiguration保存到saved-configuration，也就是保存到启动配置文件，这样设备重启后，将
+会读取已保存到FLASH存储器中的启动配置文件，加载到当前配置中运行
+
+使用save命令来将current-configuration保存到启动配置文件，save关键字如果不指定可选参
+数configuration-file，则配置文件将保存在设备的磁盘空间中并缺省命名为“vrpcfg.zip”。
+“vrpcfg.zip”是系统缺省命令的配置文件，初始状态是空配置。
+
+<SW1> reset saved-configuration
+清除已保存的启动配置文件，下次设备重启将恢复出厂配置
+
+<SW1> copy flash:/vrpcfg.zip flash:/cfgbackup.zip
+备份配置文件，文件拷贝到flash（Flash是设备的存储器，类似硬盘的概念）的根目录下，
+名称为cfgbackup.zip
+
+
+
+【恢复出厂配置】
+在用户视图下，执行命令reset factory-configuration，设备重新启动，并恢复至出厂配置状态。
+
+在用户视图下，执行命令display factory-configuration reset-result，查看设备最近一次恢复出厂配置的结果。
+
+
+
+
+
+FTP服务器配置示例
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sy
+ftp server-source -i Ethernet 0/0/1  -a设置FTP服务器源地址
+                                                     -i设置FTP服务器的源接口
+ftp server enable
+aaa
+local-user admin123 password irreversible-cipher Helloworld@6789
+local-user admin123 privilege level 15
+local-user admin123 service-type ftp
+local-user admin123 ftp-directory cfcard:/
+q
+q
+save
+
+dir
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+1、配置设备的FTP功能及FTP用户信息（包括用户名及密码、用户级别、服务类型、授权目录）。
+2、保存设备当前配置文件。
+3、从终端PC通过FTP连接设备。
+4、核心将系统软件上传至设备以及配置文件备份至PC。
+
+
+1、配置设备的FTP功能及FTP用户信息。
+<Quidway> system-view
+[Quidway] sysname FTP_Server
+[FTP_Server] ftp server-source -i Ethernet 0/0/0    
+//如果此处服务器端源地址配置为了非管理IP地址及其对应的接口，则客户端必须使用配置的源地址才能连接服务器。
+[FTP_Server] ftp server enable
+[FTP_Server] aaa
+[FTP_Server-aaa] local-user admin123 password irreversible-cipher Helloworld@6789
+[FTP_Server-aaa] local-user admin123 privilege level 15
+[FTP_Server-aaa] local-user admin123 service-type ftp
+[FTP_Server-aaa] local-user admin123 ftp-directory cfcard:/   《PS：有时候不是cfcard》
+[FTP_Server-aaa] quit
+[FTP_Server] quit
+
+2、保存设备当前配置文件
+<FTP_Server> save
+
+3、从终端PC通过FTP连接设备，输入用户名admin1234和密码Helloworld@6789，并采用binary模式进行文件传输。
+C:\Documents and Settings\Administrator> ftp 10.136.23.5
+连接到 10.136.23.5。
+220 FTP service ready.
+用户 (10.136.23.5:(none)): admin123
+331 Password required for admin123
+密码:
+230 User logged in.
+ftp> binary
+200 Type set to I.
+ftp>
+
+4、将系统软件上传至设备以及配置文件备份至终端。
+# 上传系统软件至设备。
+ftp> put devicesoft.cc
+200 Port command okay.
+150 Opening BINARY mode data connection for devicesoft.cc
+226 Transfer complete.
+ftp: 发送 106616955 字节，用时 151.05Seconds 560.79Kbytes/sec.
+
+# 备份配置文件。
+ftp> get vrpcfg.zip
+200 Port command okay.
+150 Opening BINARY mode data connection for vrpcfg.zip.
+226 Transfer complete.
+ftp: 收到 1257 字节，用时 0.03Seconds 40.55Kbytes/sec.
+
+
+5、检查配置结果。
+# 在设备中执行dir命令，查看系统软件配置文件是否上传至设备。
+<FTP_Server> dir
+Directory of cfcard:/
+
+  Idx  Attr     Size(Byte)  Date        Time       FileName
+    0  -rw-             14  Mar 13 2012 14:13:38   back_time_a
+    1  drw-              -  Mar 11 2012 00:58:54   logfile
+    2  -rw-              4  Nov 17 2011 09:33:58   snmpnotilog.txt
+    3  -rw-         11,238  Mar 12 2012 21:15:56   private-data.txt
+    4  -rw-          1,257  Mar 12 2012 21:15:54   vrpcfg.zip
+    5  -rw-             14  Mar 13 2012 14:13:38   back_time_b
+    6  -rw-    106,616,955  Mar 13 2012 14:24:24   devicesoft.cc
+    7  drw-              -  Oct 31 2011 10:20:28   sysdrv
+    8  drw-              -  Feb 21 2012 17:16:36   compatible
+    9  drw-              -  Feb 09 2012 14:20:10   selftest
+   10  -rw-         19,174  Feb 20 2012 18:55:32   backup.cfg
+   11  -rw-         23,496  Dec 15 2011 20:59:36   20111215.zip
+   12  -rw-            588  Nov 04 2011 13:54:04   servercert.der
+   13  -rw-            320  Nov 04 2011 13:54:26   serverkey.der
+   14  drw-              -  Nov 04 2011 13:58:36   security
+...
+509,256 KB total (52,752 KB free)
+# 在终端FTP用户的工作路径下，可以看到vrpcfg.zip文件已保存至此路径。
+
+
+
+
+
+
+
+导入配置
+
+1、   通过Console口连接设备，配置ftp服务器信息，连接网线，通过ftp上传新导入设备配置信息命名为vrpcfg1.zip
+
+2、   系统模式下 dir 查看flash下文件，确认新配置是否导入
+
+3、   清除设备旧配置文件
+<szvdceslhwa0>reset saved-configuration 
+The action will delete the saved configuration on the device.
+The configuration will be erased to reconfigure.Continue? [Y/N]:y
+
+4、   修改导入的新文件配置名为vrpcfg.zip
+<szvdceslhwa0> rename flash:/vrpcfg1.zip  flash:/vrpcfg.zip
+
+5、   设置设备重启动配置文件，完成后查看设备启动项，确认无误
+<szvdceslhwa0>startup saved-configuration  vrpcfg.zip 
+<szvdceslhwa0>display startup
+
+6、   重启设备
+注意，在第一次选择是否保存设备配置时选择n，如果选择y，设备重新保存配置，新的配置无法启用，导致配置更新失败.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

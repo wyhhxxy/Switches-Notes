@@ -1,0 +1,167 @@
+【以太网链路聚合（手工负载分担方式）】
+
+两个交换机
+
+【SW1】
+sy
+vlan batch 10 20
+
+int  g 0/0/1
+port link-type access
+port default vlan 10
+int  g 0/0/2
+port link-type access
+port default vlan 20
+q
+
+
+int  Eth-Trunk 1
+mode manual load-balance
+port link-type trunk
+port trunk allow-pass vlan 10 20
+q
+
+int g 0/0/23
+eth-trunk 1
+int g 0/0/24
+eth-trunk 1
+
+
+
+
+【SW2】
+sy
+vlan batch 10 20
+
+int  g 0/0/1
+port link-type access
+port default vlan 10
+int  g 0/0/2
+port link-type access
+port default vlan 20
+q
+
+int  Eth-Trunk 1
+mode manual load-balance
+port link-type trunk
+port trunk allow-pass vlan 10 20
+q
+
+int g 0/0/23
+eth-trunk 1
+int g 0/0/24
+eth-trunk 1
+
+
+【查看】
+display eth-trunk 1
+
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. 上图中，SW1的GE0/0/23口与SW2的GE0/0/23口互联，同时SW1的GE0/0/24口也与SW2的
+GE0/0/24口互联，也即SW1与SW2之间有两根互联链路；
+2. 设备接口编号及IP编址如图所示。
+2 实验需求
+1. 在交换机上创建相关VLAN；将连接PC的接口配置为Access类型并添加到相应的VLAN；
+2. 将SW1及SW2之间的链路配置为聚合链路（Eth-trunk），聚合的链路工作在手工负载分担方
+式，并将该Eth-trunk聚合接口配置为Trunk类型，因为它需要承载多个VLAN的流量；
+3. 完成配置后要求PC1与PC3能够相互ping通；PC2与PC4能够相互ping通。
+3 实现步骤及配置
+SW1的配置如下：
+[SW1] vlan batch 10 20
+[SW1] interface gigabitEthernet 0/0/1
+[SW1-GigabitEthernet0/0/1] port link-type access
+[SW1-GigabitEthernet0/0/1] port default vlan 10 
+[SW1] interface gigabitEthernet 0/0/2
+[SW1-GigabitEthernet0/0/2] port link-type access
+[SW1-GigabitEthernet0/0/2] port default vlan 20 
+[SW1-GigabitEthernet0/0/2] quit
+#现在开始配置链路汇聚，先创建一个聚合接口Eth-trunk1：
+[SW1] interface Eth-Trunk 1
+[SW1-Eth-Trunk1] mode manual load-balance #工作方式为手工负载分担（缺省就是）
+#由于该Eth-trunk需要承载多VLAN的流量，因此需配置为trunk类型，并放行VLAN10及VLAN20的流量：
+
+[SW1-Eth-Trunk1] port link-type trunk
+[SW1-Eth-Trunk1] port trunk allow-pass vlan 10 20
+[SW1-Eth-Trunk1] quit
+[SW1] interface GigabitEthernet 0/0/23 #将GE0/0/23接口添加到eth-trunk 1
+[SW1-GigabitEthernet0/0/23] eth-trunk 1
+[SW1] interface GigabitEthernet 0/0/24 #将GE0/0/24接口添加到eth-trunk 1
+[SW1-GigabitEthernet0/0/24] eth-trunk 1
+
+工作在手工负载分担方式的Eth-trunk，所有的成员链路都会参与数据的转发，也就是所有的成员
+链路缺省都是活跃链路。一旦我们在创建好的聚合链路Eth-trunk 1中添加GE0/0/23和GE0/0/24，
+这两个物理接口在交换机看来就形成了一个逻辑的聚合接口，因此针对该聚合接口的相关配置，都
+在interface eth-trunk 1中进行，而不是在GE0/0/23或GE0/0/24这两个物理接口中进行。
+由于创建的这个聚合接口Eth-trunk 1需要承载多个VLAN的二层流量，因此需要把这个聚合接口的
+link-type修改为trunk，并且在允许通行的VLAN列表中添加10及20两个VLAN。
+SW2的配置如下：
+[SW2] vlan batch 10 20
+[SW2] interface gigabitEthernet 0/0/1
+[SW2-GigabitEthernet0/0/1] port link-type access
+[SW2-GigabitEthernet0/0/1] port default vlan 10 
+[SW2] interface gigabitEthernet 0/0/2
+[SW2-GigabitEthernet0/0/2] port link-type access
+[SW2-GigabitEthernet0/0/2] port default vlan 20 
+[SW2-GigabitEthernet0/0/2] quit
+[SW2] interface Eth-Trunk 1
+[SW2-Eth-Trunk1] mode manual load-balance
+[SW2-Eth-Trunk1] port link-type trunk
+[SW2-Eth-Trunk1] port trunk allow-pass vlan 10 20
+[SW2-Eth-Trunk1] quit
+[SW2] interface GigabitEthernet 0/0/23
+[SW2-GigabitEthernet0/0/23] eth-trunk 1
+[SW2] interface GigabitEthernet 0/0/24
+[SW2-GigabitEthernet0/0/24] eth-trunk 1
+完成链路聚合的相关配置后，务必注意在设备上查看聚合接口的状态，确保接口的状态都是UP的。
+例如在SW1上使用display eth-trunk命令查看聚合接口状态：
+
+[SW1] display eth-trunk 1
+Eth-Trunk1's state information is:
+WorkingMode: NORMAL Hash arithmetic: According to SIP-XOR-DIP 
+Least Active-linknumber: 1 Max Bandwidth-affected-linknumber: 8 
+
+
+Operate status: up Number Of Up Port In Trunk: 2 
+----------------------------------------------------------------------------------
+PortName Status Weight 
+GigabitEthernet0/0/23 Up 1 
+GigabitEthernet0/0/24 Up 1 
+我们看到，eth-trunk1这个聚合接口有两个成员接口，分别是GE0/0/23及GE0/0/24，且状态都是UP
+的。完成配置后，PC1与PC3应该能够直接ping通；PC2与PC4也应该能直接ping通。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

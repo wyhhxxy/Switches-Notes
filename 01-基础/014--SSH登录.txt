@@ -1,0 +1,71 @@
+配置交换机的 SSH 服务
+pc直连交换机
+
+sy
+vlan 100
+q
+int g  0/0/1
+port link-type access
+port default vlan 100
+q
+interface Vlanif 100
+ip address 192.168.56.111  24
+q
+
+
+
+sy
+dsa local-key-pair create
+
+user-interface vty 0 4
+authentication-mode aaa
+protocol inbound ssh
+quit
+
+aaa
+local-user client001 password irreversible-cipher Huawei@123
+local-user client001 privilege level 3
+local-user client001 service-type ssh
+q
+
+ssh user client001
+ssh user client001 authentication-type password
+
+stelnet server enable
+
+ssh user client001 service-type stelnet
+
+
+
+
+stelnet server enable
+user-interface vty  14
+user privilege level 15
+authentication-mode aaa
+protocol inbound ssh 
+q
+
+ssh user admin123 authentication-type password
+ssh user admin123 service-type stelnet
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

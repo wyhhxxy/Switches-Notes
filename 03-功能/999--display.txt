@@ -1,0 +1,25 @@
+
+reset saved-configuration
+
+display vlan
+
+display port vlan   令查看接口的类型及所加入的VLAN
+
+
+dis this
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

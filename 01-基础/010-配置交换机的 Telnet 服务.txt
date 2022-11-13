@@ -1,0 +1,57 @@
+配置交换机的 Telnet 服务
+
+pc直连交换机
+
+vlan 100
+q
+
+int g  0/0/1
+port link-type access
+port default vlan 100
+
+interface Vlanif 100
+ip address 192.168.1.100 24
+
+aaa
+local-user telnetuser password cipher Huawei123
+local-user telnetuser privilege level  3 
+local-user telnetuser service-type  telnet 
+
+telnet server enable
+user-interface vty 0 4
+authentication-mode aaa
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#创建VLAN100：
+[SW] vlan 100
+[SW-vlan100] quit
+
+#配置接口GE0/0/1：
+[SW] interface GigabitEthernet 0/0/1
+[SW-GigabitEthernet0/0/1] port link-type access
+[SW-GigabitEthernet0/0/1] port default vlan 100  #为交换机的Vlanif100配置IP地址：
+
+[SW] interface Vlanif 100
+[SW-Vlanif100] ip address 192.168.1.100 24    #配置用于Telnet登录的用户名（telnetuser）、密码（Huawei123）
+
+[SW] aaa
+[SW-aaa] local-user telnetuser password cipher Huawei123
+[SW-aaa] local-user telnetuser privilege level 3         #用户级别为3级
+[SW-aaa] local-user telnetuser service-type telnet     #用户服务类型为telent
+
+#配置VTY（Virtual Teletype Terminal，虚拟终端）界面，身份认证方式为AAA认证：
+[SW] telnet server enable
+[SW] user-interface vty 0 4
+[SW-ui-vty0-4] authentication-mode aaa
+
+
+
+
+
+
+
+
+
+
+

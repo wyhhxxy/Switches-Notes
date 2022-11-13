@@ -1,0 +1,13 @@
+【通过 vlanif 接口配置管理IP】
+
+sy
+vlan 6
+
+int g 0/0/2
+port link-type a
+port def  vlan 6
+q
+
+int v 6
+ip add  1.1.1.123   24
+

@@ -1,0 +1,112 @@
+FTP服务器配置示例
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sy
+ftp server-source -i Ethernet 0/0/1  -a设置FTP服务器源地址
+                                                     -i设置FTP服务器的源接口
+ftp server enable
+aaa
+local-user admin123 password irreversible-cipher Helloworld@6789
+local-user admin123 privilege level 15
+local-user admin123 service-type ftp
+local-user admin123 ftp-directory cfcard:/
+q
+q
+save
+
+dir
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+1、配置设备的FTP功能及FTP用户信息（包括用户名及密码、用户级别、服务类型、授权目录）。
+2、保存设备当前配置文件。
+3、从终端PC通过FTP连接设备。
+4、核心将系统软件上传至设备以及配置文件备份至PC。
+
+
+1、配置设备的FTP功能及FTP用户信息。
+<Quidway> system-view
+[Quidway] sysname FTP_Server
+[FTP_Server] ftp server-source -i Ethernet 0/0/0    
+//如果此处服务器端源地址配置为了非管理IP地址及其对应的接口，则客户端必须使用配置的源地址才能连接服务器。
+[FTP_Server] ftp server enable
+[FTP_Server] aaa
+[FTP_Server-aaa] local-user admin123 password irreversible-cipher Helloworld@6789
+[FTP_Server-aaa] local-user admin123 privilege level 15
+[FTP_Server-aaa] local-user admin123 service-type ftp
+[FTP_Server-aaa] local-user admin123 ftp-directory cfcard:/   《PS：有时候不是cfcard》
+[FTP_Server-aaa] quit
+[FTP_Server] quit
+
+2、保存设备当前配置文件
+<FTP_Server> save
+
+3、从终端PC通过FTP连接设备，输入用户名admin1234和密码Helloworld@6789，并采用binary模式进行文件传输。
+C:\Documents and Settings\Administrator> ftp 10.136.23.5
+连接到 10.136.23.5。
+220 FTP service ready.
+用户 (10.136.23.5:(none)): admin123
+331 Password required for admin123
+密码:
+230 User logged in.
+ftp> binary
+200 Type set to I.
+ftp>
+
+4、将系统软件上传至设备以及配置文件备份至终端。
+# 上传系统软件至设备。
+ftp> put devicesoft.cc
+200 Port command okay.
+150 Opening BINARY mode data connection for devicesoft.cc
+226 Transfer complete.
+ftp: 发送 106616955 字节，用时 151.05Seconds 560.79Kbytes/sec.
+
+# 备份配置文件。
+ftp> get vrpcfg.zip
+200 Port command okay.
+150 Opening BINARY mode data connection for vrpcfg.zip.
+226 Transfer complete.
+ftp: 收到 1257 字节，用时 0.03Seconds 40.55Kbytes/sec.
+
+
+5、检查配置结果。
+# 在设备中执行dir命令，查看系统软件配置文件是否上传至设备。
+<FTP_Server> dir
+Directory of cfcard:/
+
+  Idx  Attr     Size(Byte)  Date        Time       FileName
+    0  -rw-             14  Mar 13 2012 14:13:38   back_time_a
+    1  drw-              -  Mar 11 2012 00:58:54   logfile
+    2  -rw-              4  Nov 17 2011 09:33:58   snmpnotilog.txt
+    3  -rw-         11,238  Mar 12 2012 21:15:56   private-data.txt
+    4  -rw-          1,257  Mar 12 2012 21:15:54   vrpcfg.zip
+    5  -rw-             14  Mar 13 2012 14:13:38   back_time_b
+    6  -rw-    106,616,955  Mar 13 2012 14:24:24   devicesoft.cc
+    7  drw-              -  Oct 31 2011 10:20:28   sysdrv
+    8  drw-              -  Feb 21 2012 17:16:36   compatible
+    9  drw-              -  Feb 09 2012 14:20:10   selftest
+   10  -rw-         19,174  Feb 20 2012 18:55:32   backup.cfg
+   11  -rw-         23,496  Dec 15 2011 20:59:36   20111215.zip
+   12  -rw-            588  Nov 04 2011 13:54:04   servercert.der
+   13  -rw-            320  Nov 04 2011 13:54:26   serverkey.der
+   14  drw-              -  Nov 04 2011 13:58:36   security
+...
+509,256 KB total (52,752 KB free)
+# 在终端FTP用户的工作路径下，可以看到vrpcfg.zip文件已保存至此路径。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

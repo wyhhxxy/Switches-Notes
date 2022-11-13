@@ -1,0 +1,25 @@
+
+vlan batch 10 20 30
+
+int g 0/0/1
+port link-type access
+port default vlan 10
+
+int  g  0/0/2
+port  link-type  trunk
+port  trunk  allow-pass  vlan 10 20  
+
+display vlan
+display port vlan
+
+
+1、Trunk类型的二层链路默认情况下不允许任何VLAN通行（除了缺省的VLAN1之外）
+2、如果VLAN1没有使用，那么可使用undo  port trunk allow-pass vlan 1命令，
+     将VLAN1从该Trunk接口中禁止通行
+
+
+
+
+
+
+

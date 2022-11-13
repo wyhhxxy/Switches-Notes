@@ -1,0 +1,15 @@
+<USG6000V1>sys
+[USG6000V1]int g  0/0/0
+[USG6000V1-GigabitEthernet0/0/0]undo shutdown 	
+[USG6000V1-GigabitEthernet0/0/0]ip address 192.168.100.2 24  #该地址需要和虚拟网卡配置在同一网段
+[USG6000V1-GigabitEthernet0/0/0]service-manage ping permit  #开启ping服务
+[USG6000V1-GigabitEthernet0/0/0]service-manage https permit  #开启https服务
+
+sys
+int g 0/0/0
+undo shutdown 
+ip add 192.168.1.22  24
+service-man ping permit 
+service-man  https  permit
+
+https://192.168.1.22:8443

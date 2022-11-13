@@ -1,0 +1,7 @@
+
+
+display cpu-usage
+display memory-usage
+display alarm active
+display  clock
+display alarm all

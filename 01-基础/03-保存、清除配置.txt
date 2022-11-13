@@ -1,0 +1,28 @@
+
+reset saved-configuration
+
+【保存配置】
+<SW1> save
+在设备上的每一个配置性操作，都会记录在设备的当前配置文件：“current-configuration”之
+中，这个配置文件是保存在动态内存中的，设备掉电或重启之后current-configuration将会丢
+失。因此为了保证设备重启后不丢失当前已经完成的配置，则要在配置变更后将currentconfiguration保存到saved-configuration，也就是保存到启动配置文件，这样设备重启后，将
+会读取已保存到FLASH存储器中的启动配置文件，加载到当前配置中运行
+
+使用save命令来将current-configuration保存到启动配置文件，save关键字如果不指定可选参
+数configuration-file，则配置文件将保存在设备的磁盘空间中并缺省命名为“vrpcfg.zip”。
+“vrpcfg.zip”是系统缺省命令的配置文件，初始状态是空配置。
+
+<SW1> reset saved-configuration
+清除已保存的启动配置文件，下次设备重启将恢复出厂配置
+
+<SW1> copy flash:/vrpcfg.zip flash:/cfgbackup.zip
+备份配置文件，文件拷贝到flash（Flash是设备的存储器，类似硬盘的概念）的根目录下，
+名称为cfgbackup.zip
+
+
+
+【恢复出厂配置】
+在用户视图下，执行命令reset factory-configuration，设备重新启动，并恢复至出厂配置状态。
+
+在用户视图下，执行命令display factory-configuration reset-result，查看设备最近一次恢复出厂配置的结果。
+

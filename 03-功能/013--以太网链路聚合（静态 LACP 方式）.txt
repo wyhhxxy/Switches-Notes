@@ -1,0 +1,157 @@
+以太网链路聚合（静态 LACP 方式）
+
+两个交换机
+
+【SW1】
+sy
+vlan batch 10 20
+
+int  g 0/0/1
+port link-type access
+port default vlan 10
+int  g 0/0/2
+port link-type access
+port default vlan 20
+q
+
+lacp priority 1
+
+int  Eth-Trunk 1
+mode lacp-static
+max active-linknumber 2
+q
+
+int g 0/0/22
+eth-trunk 1
+int g 0/0/23
+eth-trunk 1
+int g 0/0/24
+eth-trunk 1
+
+interface Eth-Trunk 1
+port link-type trunk
+port trunk allow-pass vlan 10 20
+q
+
+
+
+【SW2】
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SW1及SW2的GE0/0/22到GE0/0/24口分别互联，也即SW1及SW2之间有三条物理链路互联。
+2 实验需求
+1. 在交换机上创建相关VLAN；将连接PC的接口配置为Access类型并添加到相应的VLAN；
+2. 将SW1、SW2之间的互联链路捆绑为Eth-Trunk，使用静态LACP模式，SW1为LACP主动端
+（由它决定三条成员链路中，哪些是活跃的，哪些是非活跃的），在该聚合链路中，将两条链
+路规划为活动链路，其余一条做备份；
+3. 完成配置后同一个VLAN内的PC能够互相通信。
+3 实现步骤及配置
+SW1的配置如下：
+数通实验手册（基础篇）
+ 第45页, 共229页
+[SW1] vlan batch 10 20
+[SW1] interface gigabitEthernet 0/0/1
+[SW1-GigabitEthernet0/0/1] port link-type access
+[SW1-GigabitEthernet0/0/1] port default vlan 10 
+[SW1] interface gigabitEthernet 0/0/2
+[SW1-GigabitEthernet0/0/2] port link-type access
+[SW1-GigabitEthernet0/0/2] port default vlan 20 
+[SW1-GigabitEthernet0/0/2] quit
+#将SW1的设备LACP优先级设置为1，使得其成为Eth-trunk链路协商时的主动端，SW2的设备LACP优先级保持
+缺省32768，该值越小越优先：
+[SW1] lacp priority 1 
+#创建聚合接口Eth-trunk1，并设置为工作在静态LACP方式，将最大活跃链路数量设置为2：
+[SW1] interface Eth-Trunk 1
+[SW1-Eth-Trunk1] mode lacp-static
+[SW1-Eth-Trunk1] max active-linknumber 2
+[SW1-Eth-Trunk1] quit
+#将接口GE0/0/22、GE0/0/23及GE0/0/24添加到Eth-trunk1中：
+[SW1] interface gigabitEthernet 0/0/22
+[SW1-GigabitEthernet0/0/22] eth-trunk 1
+[SW1] interface gigabitEthernet 0/0/23
+[SW1-GigabitEthernet0/0/23] eth-trunk 1
+[SW1] interface gigabitEthernet 0/0/24
+[SW1-GigabitEthernet0/0/24] eth-trunk 1
+[SW1-GigabitEthernet0/0/24] quit 
+#由于Eth-trunk1聚合链路需要承载多VLAN流量，因此需配置为trunk，并放通VLAN10及20：
+[SW1] interface Eth-Trunk 1
+[SW1-Eth-Trunk1] port link-type trunk
+[SW1-Eth-Trunk1] port trunk allow-pass vlan 10 20
+[SW1-Eth-Trunk1] quit
+SW2的配置如下：
+[SW2] vlan batch 10 20
+[SW2] interface gigabitEthernet 0/0/1
+[SW2-GigabitEthernet0/0/1] port link-type access
+[SW2-GigabitEthernet0/0/1] port default vlan 10 
+[SW2] interface gigabitEthernet 0/0/2
+[SW2-GigabitEthernet0/0/2] port link-type access
+[SW2-GigabitEthernet0/0/2] port default vlan 20 
+[SW2-GigabitEthernet0/0/2] quit
+[SW2] interface Eth-Trunk 1
+[SW2-Eth-Trunk1] mode lacp-static #SW2的聚合接口工作方式需与SW1匹配
+[SW2-Eth-Trunk1] quit
+数通实验手册（基础篇）
+ 第46页, 共229页
+[SW2] interface gigabitEthernet 0/0/22
+[SW2-GigabitEthernet0/0/22] eth-trunk 1
+[SW2] interface gigabitEthernet 0/0/23
+[SW2-GigabitEthernet0/0/23] eth-trunk 1
+[SW2] interface gigabitEthernet 0/0/24
+[SW2-GigabitEthernet0/0/24] eth-trunk 1
+[SW2-GigabitEthernet0/0/24] quit 
+[SW2] interface Eth-Trunk 1
+[SW2-Eth-Trunk1] port link-type trunk
+[SW2-Eth-Trunk1] port trunk allow-pass vlan 10 20
+[SW2-Eth-Trunk1] quit
+Eth-trunk的静态LACP工作方式也称为M∶N模式。这种方式同时可以实现链路负载分担和链路冗
+余备份的双重功能。在链路聚合组中M条链路处于活动状态，这些链路负责转发数据并进行负载分
+担，另外N条链路处于非活动状态作为备份链路，不转发数据。当M条链路中有链路出现故障时，
+系统会从N条备份链路中选择优先级最高的接替出现故障的链路，同时这条替换故障链路的备份链
+路状态变为活动状态开始转发数据。
+静态LACP模式与手工负载分担模式的主要区别为：静态LACP模式有备份链路，而手工负载分担
+模式所有成员接口均处于转发状态，分担负载流量。在本例中SW1、SW2之间共有三条物理链路
+互联，并且都加入了Eth-trunk，我们将SW1设置为LACP主动端，也就是由它来决策哪些链路是活
+跃的。在SW1上，配置了最大活跃链路数为2，所以三条链路中有2条处于活跃状态，另一条则处
+于备份状态。
+完成上述配置后做个查看：
+[SW1] display eth-trunk 1
+Eth-Trunk1's state information is:
+Local:
+LAG ID: 1 WorkingMode: STATIC 
+Preempt Delay Time: 10 Hash arithmetic: According to SIP-XOR-DIP 
+System Priority: 1 System ID: 4c1f-ccbe-289e 
+Least Active-linknumber: 1 Max Active-linknumber: 2 
+Operate status: up Number Of Up Port In Trunk: 2 
+--------------------------------------------------------------------------------
+ActorPortName Status PortType PortPri PortNo PortKey PortState Weight
+GigabitEthernet0/0/22 Selected 1000TG 32768 23 401 10111100 1 
+GigabitEthernet0/0/23 Selected 1000TG 32768 24 401 10111100 1 
+GigabitEthernet0/0/24 Unselect 1000TG 32768 25 401 10100000 1 
+Partner:
+--------------------------------------------------------------------------------
+ActorPortName SysPri SystemID PortPri PortNo PortKey PortState
+GigabitEthernet0/0/22 32768 4c1f-cc77-6cf4 32768 23 401 10111100
+数通实验手册（基础篇）
+ 第47页, 共229页
+GigabitEthernet0/0/23 32768 4c1f-cc77-6cf4 32768 24 401 10111100
+GigabitEthernet0/0/24 32768 4c1f-cc77-6cf4 32768 25 401 10110000
+从上面的输出当中，我们看到GE0/0/22及GE0/0/23被选举（Selected）为活跃端口，而GE0/0/24
+则为备份端口（Unselect）不转发数据。当GE0/0/22或GE0/0/23端口发生故障或者其直连链路
+DOWN掉时，GE0/0/24口互联的链路会成为活跃链路。

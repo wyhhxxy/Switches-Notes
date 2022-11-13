@@ -1,0 +1,21 @@
+导入配置
+
+1、   通过Console口连接设备，配置ftp服务器信息，连接网线，通过ftp上传新导入设备配置信息命名为vrpcfg1.zip
+
+2、   系统模式下 dir 查看flash下文件，确认新配置是否导入
+
+3、   清除设备旧配置文件
+<szvdceslhwa0>reset saved-configuration 
+The action will delete the saved configuration on the device.
+The configuration will be erased to reconfigure.Continue? [Y/N]:y
+
+4、   修改导入的新文件配置名为vrpcfg.zip
+<szvdceslhwa0> rename flash:/vrpcfg1.zip  flash:/vrpcfg.zip
+
+5、   设置设备重启动配置文件，完成后查看设备启动项，确认无误
+<szvdceslhwa0>startup saved-configuration  vrpcfg.zip 
+<szvdceslhwa0>display startup
+
+6、   重启设备
+注意，在第一次选择是否保存设备配置时选择n，如果选择y，设备重新保存配置，新的配置无法启用，导致配置更新失败.
+
